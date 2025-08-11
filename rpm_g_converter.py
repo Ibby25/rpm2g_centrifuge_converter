@@ -12,20 +12,42 @@ def g_to_rpm(gs, radius_m):
     ang_v_omega = math.sqrt(accel / radius_m)
     return ang_v_omega * 60 / (2 * math.pi)
 
-# Streamlit UI
-st.title("RPM ↔ G-Force Centrifuge Converter")
+# App title
+st.title("Centrifuge RPM ↔ G-Force Converter")
 
-st.markdown("### Step 1: Convert RPM to G-Force")
-rpm1 = st.number_input("Enter the RPM of the first machine", min_value=0.0, step=10.0)
-radius1 = st.number_input("Enter the radius of the first machine's disk (m)", min_value=0.0, step=0.01)
+# Mode selection
+mode = st.radio("Select conversion mode:", ["RPM → G-Force", "G-Force → RPM"])
 
-if rpm1 > 0 and radius1 > 0:
-    gs = rpm_to_g(rpm1, radius1)
-    st.success(f"That corresponds to approximately **{gs:.2f} g** of centrifugal acceleration.")
+# Radius input units
+unit = st.radio("Radius units:", ["meters (m)", "centimeters (cm)"])
 
-    st.markdown("### Step 2: Convert G-Force to RPM for Second Machine")
-    radius2 = st.number_input("Enter the radius of the second machine's disk (m)", min_value=0.0, step=0.01)
-    
-    if radius2 > 0:
-        rpm2 = g_to_rpm(gs, radius2)
-        st.success(f"To achieve the same g-force on the second machine, set it to approximately **{rpm2:.2f} RPM**.")
+# RPM → G mode
+if mode == "RPM → G-Force":
+    rpm = st.number_input("Enter RPM", min_value=0.0, step=10.0)
+    radius = st.number_input(f"Enter radius ({unit.split()[0]})", min_value=0.0, step=0.01)
+
+    # Convert radius to meters if cm
+    radius_m = radius / 100 if "cm" in unit else radius
+
+    st.markdown(r"**Formula:** $RCF = \frac{(2 \pi \cdot RPM / 60)^2 \cdot r}{9.81}$")
+
+    if rpm > 0 and radius_m > 0:
+        gs = rpm_to_g(rpm, radius_m)
+        st.write(f"At **{rpm:,.2f} RPM** and radius **{radius:.2f} {unit.split()[0]}**:")
+        st.success(f"Centrifugal force ≈ **{gs:,.2f} × g**")
+
+# G → RPM mode
+elif mode == "G-Force → RPM":
+    gs = st.number_input("Enter g-force (× g)", min_value=0.0, step=10.0)
+    radius = st.number_input(f"Enter radius ({unit.split()[0]})", min_value=0.0, step=0.01)
+
+    # Convert radius to meters if cm
+    radius_m = radius / 100 if "cm" in unit else radius
+
+    st.markdown(r"**Formula:** $RPM = \frac{\sqrt{g_{force} \cdot 9.81 / r} \cdot 60}{2\pi}$")
+
+    if gs > 0 and radius_m > 0:
+        rpm = g_to_rpm(gs, radius_m)
+        st.write(f"For **{gs:,.2f} × g** at radius **{radius:.2f} {unit.split()[0]}**:")
+        st.success(f"Required speed ≈ **{rpm:,.2f} RPM**")
+
